@@ -13,11 +13,12 @@ func (this VisitorAst) VisitProg(prog *Prog) {
 			this.visitFunctionDecl(stmt.(*FunctionCall).Definition)
 		} else { //functionDecl
 			//do nothing
+			this.visitFunctionCall(stmt.(*FunctionCall))
 		}
 	}
 }
 
-func (this VisitorAst) visitFunctionCall(funcDecl *FunctionDecl) {
+func (this VisitorAst) visitFunctionCall(funcDecl *FunctionCall) {
 	//do nothing
 }
 
@@ -27,6 +28,6 @@ func (this VisitorAst) visitFunctionDecl(funcDecl *FunctionDecl) {
 
 func (this VisitorAst) visitFunctionBody(body *FunctionBody) {
 	for _, stmt := range body.Stmts {
-		this.visitFunctionCall(stmt.(*FunctionDecl))
+		this.visitFunctionCall(stmt.(*FunctionCall))
 	}
 }
