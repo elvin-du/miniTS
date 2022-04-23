@@ -4,25 +4,43 @@ import "log"
 
 type RefResolver struct {
 	VisitorAst
+	prog *Prog
 }
 
 func NewRefResolver() *RefResolver {
 	return &RefResolver{}
 }
 
-func (this RefResolver) resolveFunctionCall(prog *Prog, name string) {
+func (this *RefResolver) VisitProg(prog *Prog) {
+	this.prog = prog
 	for _, stmt := range prog.stmts {
 		if IsFunctionCallNode(stmt) {
-			fCall := stmt.(*FunctionCall)
-			fCall.Definition = this.findFunctionDecl(prog, fCall.Name)
-			if nil == fCall.Definition {
-				log.Fatal(fCall.Name, " function not found")
-			}
+			this.resolveFunctionCall(prog, stmt.(*FunctionCall))
+		} else { //functionDecl
+			this.visitFunctionDecl(stmt.(*FunctionDecl))
 		}
 	}
 }
 
-func (this RefResolver) findFunctionDecl(prog *Prog, name string) *FunctionDecl {
+func (this *RefResolver) VisitFunctionBody(fBody *FunctionBody) {
+	for _, stmt := range fBody.Stmts {
+		this.resolveFunctionCall(this.prog, stmt.(*FunctionCall))
+	}
+}
+
+func (this *RefResolver) resolveFunctionCall(prog *Prog, fCall *FunctionCall) {
+	fDecl := this.findFunctionDecl(prog, fCall.Name)
+	if nil != fDecl {
+		fCall.Definition = fDecl
+		return
+	} else {
+		if fCall.Name != "println" {
+			log.Fatalln("function", fCall.Name, "not found")
+		}
+	}
+}
+
+func (this *RefResolver) findFunctionDecl(prog *Prog, name string) *FunctionDecl {
 	for _, stmt := range prog.stmts {
 		if IsFunctionDeclNode(stmt) {
 			funcDecl := stmt.(*FunctionDecl)

@@ -11,10 +11,10 @@ func NewProg(stmts []Statement) *Prog {
 	return prog
 }
 
-func (this Prog) Dump(prefix string) {
+func (this *Prog) Dump(prefix string) {
 	log.Println(prefix, "Prog") //todo
 }
 
-func (this Prog) Kind() NodeKind {
+func (this *Prog) Kind() NodeKind {
 	return NodeKindProg
 }

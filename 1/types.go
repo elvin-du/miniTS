@@ -1,6 +1,31 @@
 package main
 
+import (
+	"fmt"
+	"log"
+)
+
 type TokenKind int
+
+func (tk TokenKind) String() string {
+	switch tk {
+	case Keyword:
+		return fmt.Sprintf("Keyword")
+	case Identifier:
+		return fmt.Sprintf("Identifier")
+	case StringLiteral:
+		return fmt.Sprintf("StringLiteral")
+	case Seperator:
+		return fmt.Sprintf("Seperator")
+	case Operator:
+		return fmt.Sprintf("Operator")
+	case EOF:
+		return fmt.Sprintf("EOF")
+	}
+
+	log.Fatalln("tokenkind,", tk, " not define")
+	return ""
+}
 
 const (
 	Keyword       TokenKind = 1

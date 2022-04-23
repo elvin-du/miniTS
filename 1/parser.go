@@ -63,7 +63,7 @@ func (p *Parser) ParseFunctionDecl() Statement {
 				}
 			}
 		} else {
-			log.Fatal("expect function identifier, but got ", t.Kind)
+			log.Fatal("expect function identifier, but got ", t)
 		}
 	}
 

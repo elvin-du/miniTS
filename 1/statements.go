@@ -21,11 +21,11 @@ func NewFunctionCall(name string, parameters []string) *FunctionCall {
 	return &FunctionCall{Name: name, Parameters: parameters}
 }
 
-func (this FunctionCall) Dump(prefix string) {
+func (this *FunctionCall) Dump(prefix string) {
 	log.Println(prefix, "FunctionDecl", this.Name)
 }
 
-func (this FunctionCall) Kind() NodeKind {
+func (this *FunctionCall) Kind() NodeKind {
 	return NodeKindFunctionCall
 }
 
@@ -40,11 +40,11 @@ func NewFunctionDecl(name string, body *FunctionBody) *FunctionDecl {
 	return &FunctionDecl{Name: name, Body: body}
 }
 
-func (this FunctionDecl) Dump(prefix string) {
+func (this *FunctionDecl) Dump(prefix string) {
 	log.Println(prefix, "FunctionDecl", this.Name)
 	this.Body.Dump(prefix)
 }
 
-func (this FunctionDecl) Kind() NodeKind {
+func (this *FunctionDecl) Kind() NodeKind {
 	return NodeKindFunctionDecl
 }

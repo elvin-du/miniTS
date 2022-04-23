@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Token struct {
 	Kind TokenKind
 	Text string
@@ -14,7 +16,7 @@ function sayHello(){
 //调用刚才声明的函数
 sayHello();
 */
-var tokenArray = []Token{
+var tokenArray = []*Token{
 	{Kind: Keyword, Text: "function"},
 	{Kind: Identifier, Text: "sayHello"},
 	{Kind: Seperator, Text: "("},
@@ -33,13 +35,17 @@ var tokenArray = []Token{
 	{Kind: EOF, Text: ""},
 }
 
+func (t *Token) String() string {
+	return fmt.Sprintf("%+v", *t)
+}
+
 type Tokenizer struct {
 	Tokens []*Token
 	Pos    int
 }
 
-func NewTokenizer() *Tokenizer {
-	return &Tokenizer{}
+func NewTokenizer(tokens []*Token) *Tokenizer {
+	return &Tokenizer{Tokens: tokens}
 }
 
 func (t *Tokenizer) Next() *Token {
@@ -48,7 +54,7 @@ func (t *Tokenizer) Next() *Token {
 	}
 
 	token := t.Tokens[t.Pos]
-	t.Pos += t.Pos
+	t.Pos += 1
 	return token
 }
 
