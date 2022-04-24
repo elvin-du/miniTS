@@ -13,9 +13,7 @@ func compileAndRun() {
 	//词法分析
 	tokenizer := NewTokenizer(tokenArray)
 	log.Println(tokenArray)
-	//for i, t := range tokenArray {
-	//	log.Printf("%d %v", i, t)
-	//}
+
 	//语法分析，构建AST
 	parser := NewParser(tokenizer)
 	prog := parser.ParseProg()
@@ -27,5 +25,5 @@ func compileAndRun() {
 	prog.Dump("  ")
 	//程序运行
 
-	NewIntepreter().VisitProg(prog)
+	NewIntepreter().Start(prog)
 }

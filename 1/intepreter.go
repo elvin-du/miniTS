@@ -9,7 +9,7 @@ func NewIntepreter() *Intepreter {
 	return &Intepreter{}
 }
 
-func (this *Intepreter) VisitProg(prog *Prog) {
+func (this *Intepreter) Start(prog *Prog) {
 	for _, stmt := range prog.stmts {
 		if IsFunctionCallNode(stmt) {
 			this.RunFunction(stmt.(*FunctionCall))

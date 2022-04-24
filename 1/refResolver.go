@@ -3,7 +3,7 @@ package main
 import "log"
 
 type RefResolver struct {
-	VisitorAst
+	//VisitorAst
 	prog *Prog
 }
 
@@ -17,13 +17,16 @@ func (this *RefResolver) VisitProg(prog *Prog) {
 		if IsFunctionCallNode(stmt) {
 			this.resolveFunctionCall(prog, stmt.(*FunctionCall))
 		} else { //functionDecl
-			this.visitFunctionDecl(stmt.(*FunctionDecl))
+			this.VisitFunctionDecl(stmt.(*FunctionDecl))
 		}
 	}
 }
+func (this *RefResolver) VisitFunctionDecl(funcDecl *FunctionDecl) {
+	this.VisitFunctionBody(funcDecl.Body)
+}
 
-func (this *RefResolver) VisitFunctionBody(fBody *FunctionBody) {
-	for _, stmt := range fBody.Stmts {
+func (this *RefResolver) VisitFunctionBody(body *FunctionBody) {
+	for _, stmt := range body.Stmts {
 		this.resolveFunctionCall(this.prog, stmt.(*FunctionCall))
 	}
 }

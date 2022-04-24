@@ -41,11 +41,13 @@ func (p *Parser) ParseProg() *Prog {
 /**
  * 解析函数声明
  * 语法规则：
- * functionDecl: "function" Identifier "(" ")"  functionBody;
+ * functionDecl: "function" Identifier "(" parameterList? ")"  functionBody;
+ * parameterList : Keyword (',' Keyword)* ;
  */
 func (p *Parser) ParseFunctionDecl() Statement {
 	oldPos := p.tokenizer.Pos
 	t := p.tokenizer.Next()
+	param := []string{}
 
 	if t.Kind == Keyword && t.Text == "function" {
 		t = p.tokenizer.Next()
@@ -53,14 +55,24 @@ func (p *Parser) ParseFunctionDecl() Statement {
 			t1 := p.tokenizer.Next()
 			if t1.Text == "(" {
 				t2 := p.tokenizer.Next()
+				for t2.Text != ")" {
+					if t2.Kind == Keyword {
+						param = append(param, t2.Text)
+					}
+
+					t2 = p.tokenizer.Next()
+					if t2.Text == "," {
+						t2 = p.tokenizer.Next()
+					}
+				}
+
 				if t2.Text == ")" {
 					funcBody := p.ParseFunctionBody()
 					if nil != funcBody && IsFunctionBodyNode(funcBody) {
-						return NewFunctionDecl(t.Text, funcBody)
+						return NewFunctionDecl(t.Text, param, funcBody)
 					}
-				} else {
-					log.Fatal("expect ), but got ", t2.Text)
 				}
+
 			}
 		} else {
 			log.Fatal("expect function identifier, but got ", t)

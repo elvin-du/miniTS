@@ -32,12 +32,13 @@ func (this *FunctionCall) Kind() NodeKind {
 //*********FunctionDecl************/
 
 type FunctionDecl struct {
-	Name string
-	Body *FunctionBody
+	Name       string
+	Parameters []string
+	Body       *FunctionBody
 }
 
-func NewFunctionDecl(name string, body *FunctionBody) *FunctionDecl {
-	return &FunctionDecl{Name: name, Body: body}
+func NewFunctionDecl(name string, params []string, body *FunctionBody) *FunctionDecl {
+	return &FunctionDecl{Name: name, Parameters: params, Body: body}
 }
 
 func (this *FunctionDecl) Dump(prefix string) {
