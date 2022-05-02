@@ -23,7 +23,7 @@ func (tk TokenKind) String() string {
 		return fmt.Sprintf("EOF")
 	}
 
-	log.Fatalln("tokenkind,", tk, " not define")
+	log.Fatalf("tokenkind %d,%s", tk, " not define")
 	return ""
 }
 

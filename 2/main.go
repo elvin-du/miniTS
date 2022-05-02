@@ -2,6 +2,8 @@ package main
 
 import "log"
 
+var source = ``
+
 func init() {
 	log.SetFlags(log.Llongfile)
 }
@@ -11,8 +13,7 @@ func main() {
 
 func compileAndRun() {
 	//词法分析
-	tokenizer := NewTokenizer(tokenArray)
-	log.Println(tokenArray)
+	tokenizer := NewTokenizer(NewCharStream(source))
 
 	//语法分析，构建AST
 	parser := NewParser(tokenizer)
