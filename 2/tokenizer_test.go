@@ -52,3 +52,10 @@ func TestCharStream_next(t *testing.T) {
 		t.Error("should be 2")
 	}
 }
+
+func TestTokenizer_Next(t *testing.T) {
+	tokenizer := NewTokenizer(NewCharStream(source))
+	for !tokenizer.Stream.isEOF() {
+		tokenizer.Next()
+	}
+}

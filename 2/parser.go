@@ -45,7 +45,6 @@ func (p *Parser) ParseProg() *Prog {
  * parameterList : Keyword (',' Keyword)* ;
  */
 func (p *Parser) ParseFunctionDecl() Statement {
-	oldPos := p.tokenizer.Pos
 	t := p.tokenizer.Next()
 	param := []string{}
 
@@ -79,7 +78,6 @@ func (p *Parser) ParseFunctionDecl() Statement {
 		}
 	}
 
-	p.tokenizer.traceBack(oldPos)
 	return nil
 }
 
@@ -89,7 +87,6 @@ func (p *Parser) ParseFunctionDecl() Statement {
  * functionBody : '{' functionCall* '}' ;
  */
 func (p *Parser) ParseFunctionBody() *FunctionBody {
-	oldPos := p.tokenizer.Pos
 	t := p.tokenizer.Next()
 	stmts := []Statement{}
 
@@ -113,7 +110,6 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
 		log.Println("expect {, but got ", t.Text)
 	}
 
-	p.tokenizer.traceBack(oldPos)
 	return nil
 }
 
@@ -124,7 +120,6 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
  * parameterList : StringLiteral (',' StringLiteral)* ;
  */
 func (p *Parser) ParseFunctionCall() Statement {
-	oldPos := p.tokenizer.Pos
 	parameters := []string{}
 	t := p.tokenizer.Next()
 
@@ -159,6 +154,5 @@ func (p *Parser) ParseFunctionCall() Statement {
 		}
 	}
 
-	p.tokenizer.traceBack(oldPos)
 	return nil
 }

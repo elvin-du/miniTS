@@ -11,7 +11,7 @@ StringLiteral: '"' * '"' ;
 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
 
-Keyword: function
+Keyword: func
         | return
         | int
         | string
@@ -28,24 +28,22 @@ Seperator: (
         | }
         | ;
         | ,
-        | [
-        | ]
         ;
 
 //运算符
 Operator: +
-        |  -
-        |  *
-        |  /
-        |  -=
         | +=
-        | >=
-        | <=
+        | -
+        | -=
+        | *
+        | *=
+        | /
+        | /=
         | >
+        | >=
         | <
+        | <=
         | ==
-        | !=
-        | %
         ; 
         
         

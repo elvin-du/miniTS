@@ -38,11 +38,19 @@ func NewCharStream(source string) *CharStream {
 }
 
 func (this *CharStream) peek() string {
-	return this.Source[this.Pos : this.Pos+1]
+	if this.isEOF() {
+		return ""
+	}
+
+	return string(this.Source[this.Pos])
 }
 
 func (this *CharStream) next() string {
-	ch := this.Source[this.Pos : this.Pos+1]
+	if this.isEOF() {
+		return ""
+	}
+
+	ch := string(this.Source[this.Pos])
 	if ch == "\n" {
 		this.Line++
 		this.Col = 0
@@ -55,7 +63,7 @@ func (this *CharStream) next() string {
 }
 
 func (this *CharStream) isEOF() bool {
-	return (this.Pos + 1) >= len(this.Source)
+	return this.Pos >= len(this.Source)
 }
 
 /**
@@ -66,8 +74,6 @@ func (this *CharStream) isEOF() bool {
  * peek(): 返回当前的Token，但不移动当前位置。
  */
 type Tokenizer struct {
-	//Tokens []*Token
-	Pos       int //todo remove
 	Stream    *CharStream
 	NextToken *Token
 }
@@ -83,6 +89,7 @@ func (t *Tokenizer) Next() *Token {
 	lastToken := t.NextToken
 
 	t.NextToken = t.getAToken()
+	log.Printf("token:%+v", lastToken)
 	return lastToken
 }
 
@@ -95,12 +102,109 @@ func (t *Tokenizer) Peek() *Token {
 
 func (t *Tokenizer) getAToken() *Token {
 	t.skipSpaces()
-	//if t.Stream.isEOF() {
-	//	return NewToken(EOF, "")
-	//} else if {
-	//
-	//}
+	if t.Stream.isEOF() {
+		return NewToken(EOF, "")
+	}
+
+	c := t.Stream.peek()
+	switch c {
+	case "(", ")", "{", "}", ";", ",":
+		t.Stream.next()
+		return NewToken(Seperator, c)
+	case `"`:
+		return t.parseStringLiteral()
+	case "/":
+		t.Stream.next() //跳过第一个/
+		c1 := t.Stream.peek()
+		if "*" == c1 {
+			t.skipMultiComments()
+			return t.getAToken()
+		} else if "/" == c1 {
+			t.skipSignalComment()
+			return t.getAToken()
+		} else if "=" == c1 {
+			t.Stream.next()
+			return NewToken(Operator, "/=")
+		} else {
+			return NewToken(Operator, "/")
+		}
+	case "*":
+		t.Stream.next() //跳过*
+		c1 := t.Stream.peek()
+		if "=" == c1 {
+			t.Stream.next()
+			return NewToken(Operator, "*=")
+		} else {
+			return NewToken(Operator, "*")
+		}
+	case "-":
+		t.Stream.next()
+		c1 := t.Stream.next()
+		if "=" == c1 {
+			t.Stream.next()
+			return NewToken(Operator, "-=")
+		} else {
+			return NewToken(Operator, "-")
+		}
+	case "+":
+		t.Stream.next()
+		c1 := t.Stream.peek()
+		if "=" == c1 {
+			t.Stream.next()
+			return NewToken(Operator, "+=")
+		} else {
+			return NewToken(Operator, "+")
+		}
+	}
+
+	if t.isLetter(c) {
+		return t.parseIdentifier()
+	}
+
+	//暂时去掉不能识别的字符
+	log.Println("Unrecognized pattern meeting ': ", c, "', at", t.Stream.Line, " col: ", t.Stream.Col)
+	t.Stream.next() //skip unrecognized char
+	return t.getAToken()
+}
+
+/**
+ * 字符串字面量。
+ * 目前只支持双引号，并且不支持转义。
+ */
+func (t *Tokenizer) parseStringLiteral() *Token {
+	token := NewToken(StringLiteral, "")
+	t.Stream.next() //去掉"
+
+	for !t.Stream.isEOF() {
+		if `"` == t.Stream.peek() {
+			t.Stream.next() //去掉"
+			return token
+		}
+
+		token.Text += t.Stream.next()
+	}
+
+	log.Fatal("should not be here")
 	return nil
+}
+
+/**
+ * 解析标识符。从标识符中还要挑出关键字。
+ */
+func (t *Tokenizer) parseIdentifier() *Token {
+	token := NewToken(Identifier, "")
+	//第一个字符不用判断，因为在调用者那里已经判断过了
+	token.Text += t.Stream.next()
+
+	for !t.Stream.isEOF() && t.isLetterDigitOrUnderScore(t.Stream.peek()) {
+		token.Text += t.Stream.next()
+	}
+
+	if token.Text == "function" {
+		token.Kind = Keyword
+	}
+
+	return token
 }
 func (t *Tokenizer) skipSignalComment() {
 	//跳过第二个/，第一个之前已经跳过去了。
@@ -134,11 +238,33 @@ func (t *Tokenizer) skipSpaces() {
 	}
 }
 func (t *Tokenizer) isSpace(str string) bool {
-	if str == " " || str == `\n` || str == `\t` {
+	if str == " " || str == "\n" || str == "\t" {
 		return true
 	}
 	return false
 }
 
-//todo remove
-func (t *Tokenizer) traceBack(pos int) {}
+func (t *Tokenizer) isDigit(str string) bool {
+	if len(str) > 0 {
+		return str[0] >= '0' && str[0] <= '9'
+	}
+	return false
+}
+
+func (t *Tokenizer) isLetter(str string) bool {
+	if len(str) > 0 {
+		c := str[0]
+		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+	}
+	return false
+}
+func (t *Tokenizer) isLetterDigitOrUnderScore(str string) bool {
+	if len(str) > 0 {
+		c := str[0]
+		return c >= 'a' && c <= 'z' ||
+			c >= 'A' && c <= 'Z' ||
+			c >= '0' && c <= '9' ||
+			c == '_'
+	}
+	return false
+}
