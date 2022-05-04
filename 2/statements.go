@@ -21,8 +21,8 @@ func NewFunctionCall(name string, parameters []string) *FunctionCall {
 	return &FunctionCall{Name: name, Parameters: parameters}
 }
 
-func (this *FunctionCall) Dump(prefix string) {
-	log.Println(prefix, "FunctionDecl", this.Name)
+func (this *FunctionCall) String() {
+	log.Println("FunctionDecl Name:", this.Name, "Parameters:", this.Parameters, "Definition:", this.Definition)
 }
 
 func (this *FunctionCall) Kind() NodeKind {
@@ -30,7 +30,6 @@ func (this *FunctionCall) Kind() NodeKind {
 }
 
 //*********FunctionDecl************/
-
 type FunctionDecl struct {
 	Name       string
 	Parameters []string
@@ -41,9 +40,8 @@ func NewFunctionDecl(name string, params []string, body *FunctionBody) *Function
 	return &FunctionDecl{Name: name, Parameters: params, Body: body}
 }
 
-func (this *FunctionDecl) Dump(prefix string) {
-	log.Println(prefix, "FunctionDecl", this.Name)
-	this.Body.Dump(prefix)
+func (this *FunctionDecl) String() {
+	log.Println("FunctionDecl Name:", this.Name, "Parameters:", this.Parameters, "Body:", this.Body)
 }
 
 func (this *FunctionDecl) Kind() NodeKind {

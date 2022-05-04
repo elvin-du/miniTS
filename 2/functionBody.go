@@ -12,8 +12,10 @@ func NewFunctionBody(stmts []Statement) *FunctionBody {
 	return &FunctionBody{Stmts: stmts}
 }
 
-func (this *FunctionBody) Dump(prefix string) {
-	log.Println(prefix, "") //todo
+func (this *FunctionBody) String() {
+	for _, stmt := range this.Stmts {
+		log.Println(stmt)
+	}
 }
 
 func (this *FunctionBody) Kind() NodeKind {

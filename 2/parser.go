@@ -17,22 +17,20 @@ func NewParser(tokenizer *Tokenizer) *Parser {
  */
 func (p *Parser) ParseProg() *Prog {
 	stmts := []Statement{}
-	for {
-		stmt := p.ParseFunctionDecl()
-		if nil != stmt {
-			stmts = append(stmts, stmt)
-			continue
+	t := p.tokenizer.Peek()
+	for t.Kind != EOF {
+		var stmt Statement
+		if t.Kind == Keyword && "function" == t.Text {
+			stmt = p.ParseFunctionDecl()
+
+		} else if t.Kind == Identifier {
+			stmt = p.ParseFunctionCall()
 		}
 
-		stmt = p.ParseFunctionCall()
 		if nil != stmt {
 			stmts = append(stmts, stmt)
-			continue
 		}
-
-		if nil == stmt {
-			break
-		}
+		t = p.tokenizer.Peek()
 	}
 
 	return NewProg(stmts)
@@ -45,37 +43,34 @@ func (p *Parser) ParseProg() *Prog {
  * parameterList : Keyword (',' Keyword)* ;
  */
 func (p *Parser) ParseFunctionDecl() Statement {
-	t := p.tokenizer.Next()
+	p.tokenizer.Next() //跳过function
 	param := []string{}
 
-	if t.Kind == Keyword && t.Text == "function" {
-		t = p.tokenizer.Next()
-		if t.Kind == Identifier {
-			t1 := p.tokenizer.Next()
-			if t1.Text == "(" {
-				t2 := p.tokenizer.Next()
-				for t2.Text != ")" {
-					if t2.Kind == Keyword {
-						param = append(param, t2.Text)
-					}
+	t := p.tokenizer.Next()
+	if t.Kind == Identifier {
+		t1 := p.tokenizer.Next()
+		if t1.Text == "(" {
+			t2 := p.tokenizer.Next()
+			for t2.Text != ")" {
+				if t2.Kind == Keyword {
+					param = append(param, t2.Text)
+				}
 
+				t2 = p.tokenizer.Next()
+				if t2.Text == "," {
 					t2 = p.tokenizer.Next()
-					if t2.Text == "," {
-						t2 = p.tokenizer.Next()
-					}
 				}
-
-				if t2.Text == ")" {
-					funcBody := p.ParseFunctionBody()
-					if nil != funcBody && IsFunctionBodyNode(funcBody) {
-						return NewFunctionDecl(t.Text, param, funcBody)
-					}
-				}
-
 			}
-		} else {
-			log.Fatal("expect function identifier, but got ", t)
+
+			if t2.Text == ")" {
+				funcBody := p.ParseFunctionBody()
+				if nil != funcBody && IsFunctionBodyNode(funcBody) {
+					return NewFunctionDecl(t.Text, param, funcBody)
+				}
+			}
 		}
+	} else {
+		log.Fatal("expect function identifier, but got ", t)
 	}
 
 	return nil
@@ -91,12 +86,10 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
 	stmts := []Statement{}
 
 	if "{" == t.Text {
-		for {
-			stmt := p.ParseFunctionCall()
-			if nil != stmt && IsFunctionCallNode(stmt) {
-				stmts = append(stmts, stmt)
-			} else {
-				break
+		for p.tokenizer.Peek().Kind == Identifier {
+			funcCall := p.ParseFunctionCall()
+			if nil != funcCall && IsFunctionCallNode(funcCall) {
+				stmts = append(stmts, funcCall)
 			}
 		}
 
@@ -107,7 +100,7 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
 			log.Fatal("expect },but got ", t.Text)
 		}
 	} else {
-		log.Println("expect {, but got ", t.Text)
+		log.Fatal("expect {, but got ", t.Text)
 	}
 
 	return nil
@@ -120,7 +113,7 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
  * parameterList : StringLiteral (',' StringLiteral)* ;
  */
 func (p *Parser) ParseFunctionCall() Statement {
-	parameters := []string{}
+	var parameters []string
 	t := p.tokenizer.Next()
 
 	if t.Kind == Identifier {
@@ -137,18 +130,18 @@ func (p *Parser) ParseFunctionCall() Statement {
 				t2 = p.tokenizer.Next()
 				if t2.Text != ")" {
 					if t2.Text == "," {
-						t2 = p.tokenizer.Next()
+						t2 = p.tokenizer.Next() //消化掉,
 					} else {
-						log.Println("Expecting a comma in FunctionCall, while we got a " + t2.Text)
+						log.Println("Expecting a comma , in FunctionCall, while we got a " + t2.Text)
 						return nil
 					}
 				}
 			}
-			t2 = p.tokenizer.Next()
+			t2 = p.tokenizer.Next() //消化掉 ;
 			if t2.Text == ";" {
 				return NewFunctionCall(t.Text, parameters)
 			} else {
-				log.Println("Expecting a comma in FunctionCall, while we got a " + t2.Text)
+				log.Println("Expecting a comma ; in FunctionCall, while we got a " + t2.Text)
 				return nil
 			}
 		}

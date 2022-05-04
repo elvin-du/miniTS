@@ -55,7 +55,8 @@ func TestCharStream_next(t *testing.T) {
 
 func TestTokenizer_Next(t *testing.T) {
 	tokenizer := NewTokenizer(NewCharStream(source))
-	for !tokenizer.Stream.isEOF() {
-		tokenizer.Next()
+	token := tokenizer.Peek()
+	for token.Kind != EOF {
+		token = tokenizer.Next()
 	}
 }

@@ -11,8 +11,10 @@ func NewProg(stmts []Statement) *Prog {
 	return prog
 }
 
-func (this *Prog) Dump(prefix string) {
-	log.Println(prefix, "Prog") //todo
+func (this *Prog) String() {
+	for _, stmt := range this.stmts {
+		log.Println("Prog", stmt)
+	}
 }
 
 func (this *Prog) Kind() NodeKind {
