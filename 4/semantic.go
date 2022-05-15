@@ -59,21 +59,40 @@ func (this *RefResolver) findFunctionDecl(prog *Prog, name string) *FunctionDecl
 type SymKind int
 
 const (
-	Variable  SymKind = 1
-	Function          = 2
-	Struct            = 3
-	Interface         = 4
+	SymKindVariable  SymKind = 1
+	SymKindFunction          = 2
+	SymKindStruct            = 3
+	SymKindInterface         = 4
 )
 
 type Symbol struct {
 	Name string
-	Decl Declaration
+	Decl ASTNode //符号声明的ast节点
 	Kind SymKind
 }
 
-func NewSymbol(name string, decl Declaration, kind SymKind) *Symbol {
+func NewSymbol(name string, decl ASTNode, kind SymKind) *Symbol {
 	return &Symbol{Name: name, Decl: decl, Kind: kind}
 }
 
 type SymbolTable struct {
+	table map[string]*Symbol
+}
+
+func NewSymbolTable() *SymbolTable {
+	return &SymbolTable{table: make(map[string]*Symbol)}
+}
+
+func (this *SymbolTable) Enter(name string, decl ASTNode, kind SymKind) {
+	symbol := NewSymbol(name, decl, kind)
+	this.table[name] = symbol
+}
+
+func (this *SymbolTable) HasSymbol(name string) bool {
+	_, ok := this.table[name]
+	return ok
+}
+
+func (this *SymbolTable) GetSymbol(name string) *Symbol {
+	return this.table[name]
 }

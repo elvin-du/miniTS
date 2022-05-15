@@ -83,7 +83,7 @@ type Statement interface {
 }
 
 type FunctionCall struct {
-	node
+	*node
 	Name       string
 	Parameters []string
 	Definition *FunctionDecl
@@ -101,13 +101,30 @@ func (this *FunctionCall) Kind() NodeKind {
 	return NodeKindFunctionCall
 }
 
-type Declaration interface {
-	ASTNode
+type VariableDecl struct {
+	*node
+	name     string  //变量名称
+	typ      string  //变量类型
+	initExpr ASTNode //变量初始化所使用的表达式
+}
+
+func NewVariableDecl(name string, typ string, initExpr ASTNode) *VariableDecl {
+	return &VariableDecl{node: NewNode(), name: name, typ: typ, initExpr: initExpr}
+}
+
+type Variable struct {
+	*node
+	name string //变量名称
+	decl *VariableDecl
+}
+
+func NewVariable(name string) *Variable {
+	return &Variable{node: NewNode(), name: name}
 }
 
 //*********FunctionDecl************/
 type FunctionDecl struct {
-	Declaration
+	*node
 	Name       string
 	Parameters []string
 	Body       *FunctionBody
@@ -126,11 +143,12 @@ func (this *FunctionDecl) Kind() NodeKind {
 }
 
 type FunctionBody struct {
+	*node
 	Stmts []Statement
 }
 
 func NewFunctionBody(stmts []Statement) *FunctionBody {
-	return &FunctionBody{Stmts: stmts}
+	return &FunctionBody{node: NewNode(), Stmts: stmts}
 }
 
 func (this *FunctionBody) String() {
@@ -143,17 +161,13 @@ func (this *FunctionBody) Kind() NodeKind {
 	return NodeKindFunctionBody
 }
 
-type Expr struct {
-	*node
-}
-
-func NewExpr(kind NodeKind, token *Token) *Expr {
-	expr := &Expr{NewNode()}
-	expr.SetLabel(token.Text)
-	expr.SetKind(kind)
-	expr.SetToken(token)
-	return expr
-}
+//func NewExpr(kind NodeKind, token *Token) *Expr {
+//	expr := &Expr{NewNode()}
+//	expr.SetLabel(token.Text)
+//	expr.SetKind(kind)
+//	expr.SetToken(token)
+//	return expr
+//}
 
 type Prog struct {
 	stmts []Statement
