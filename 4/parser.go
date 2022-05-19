@@ -3,37 +3,77 @@ package main
 import "log"
 
 type Parser struct {
-	tokenizer *Tokenizer
+	lexer *Lexer
 }
 
-func NewParser(tokenizer *Tokenizer) *Parser {
-	return &Parser{tokenizer: tokenizer}
+/*
+* 当前语法规则：
+* prog = statementList? EOF;
+* statementList = (variableDecl | functionDecl | expressionStatement)+ ;
+* variableDecl : 'let' Identifier typeAnnotation？ ('=' singleExpression) ';';
+* typeAnnotation : ':' typeName;
+* functionDecl: "function" Identifier "(" ")"  functionBody;
+* functionBody : '{' statementList? '}' ;
+* statement: functionDecl | expressionStatement;
+* expressionStatement: expression ';' ;
+* expression: primary (binOP primary)* ;
+* primary: StringLiteral | DecimalLiteral | IntegerLiteral | functionCall | '(' expression ')' ;
+* binOP: '+' | '-' | '*' | '/' | '=' | '+=' | '-=' | '*=' | '/=' | '==' | '!=' | '<=' | '>=' | '<'
+*      | '>' | '&&'| '||'|...;
+* functionCall : Identifier '(' parameterList? ')' ;
+* parameterList : expression (',' expression)* ;
+ */
+
+func NewParser(lexer *Lexer) *Parser {
+	return &Parser{lexer: lexer}
 }
 
 /**
 * 解析Prog
 * 语法规则：
-* prog = (functionDecl | functionCall)* ;
+* prog = statementList? EOF ;
+* statementList =(variableDecl | functionDecl | expressionStatement)+;
  */
 func (p *Parser) ParseProg() *Prog {
+	return NewProg(p.ParseStatementList())
+}
+
+func (p *Parser) ParseStatementList() []Statement {
 	stmts := []Statement{}
-	t := p.tokenizer.Peek()
+	t := p.lexer.Peek()
 	for t.Kind != EOF {
-		var stmt Statement
-		if t.Kind == Keyword && "function" == t.Text {
-			stmt = p.ParseFunctionDecl()
-
-		} else if t.Kind == Identifier {
-			stmt = p.ParseFunctionCall()
-		}
-
+		stmt := p.ParseStatement()
 		if nil != stmt {
 			stmts = append(stmts, stmt)
 		}
-		t = p.tokenizer.Peek()
+		t = p.lexer.Peek()
 	}
 
-	return NewProg(stmts)
+	return stmts
+}
+
+/**
+ * 解析语句。
+ * 知识点：在这里，遇到了函数调用和变量赋值，都可能是以Identifier开头的情况，所以预读一个Token是不够的，
+ * 所以这里预读了两个Token。
+ */
+func (this *Parser) ParseStatement() Statement {
+	t := this.lexer.Peek()
+	if t.Kind == Keyword && t.Text == "function" {
+		return this.ParseFunctionDecl()
+	} else if t.Text == "let" {
+		return this.ParseVariableDecl()
+	} else if t.Kind == Identifier {
+		//t.Kind == DecimalLiteral ||
+		//t.Kind == IntegerLiteral ||
+		//t.Kind == StringLiteral ||
+		//t.Text == "(" { //todo 没有处理函数调用，变量赋值
+		return this.ParseExpressionStmt()
+	} else {
+		log.Fatalln("cannot recognize a expression:", this.lexer.Peek().Text)
+	}
+
+	return nil
 }
 
 /**
@@ -43,22 +83,22 @@ func (p *Parser) ParseProg() *Prog {
 * parameterList : Keyword (',' Keyword)* ;
  */
 func (p *Parser) ParseFunctionDecl() Statement {
-	p.tokenizer.Next() //跳过function
+	p.lexer.Next() //跳过function
 	param := []string{}
 
-	t := p.tokenizer.Next()
+	t := p.lexer.Next()
 	if t.Kind == Identifier {
-		t1 := p.tokenizer.Next()
+		t1 := p.lexer.Next()
 		if t1.Text == "(" {
-			t2 := p.tokenizer.Next()
+			t2 := p.lexer.Next()
 			for t2.Text != ")" {
 				if t2.Kind == Keyword {
 					param = append(param, t2.Text)
 				}
 
-				t2 = p.tokenizer.Next()
+				t2 = p.lexer.Next()
 				if t2.Text == "," {
-					t2 = p.tokenizer.Next()
+					t2 = p.lexer.Next()
 				}
 			}
 
@@ -82,18 +122,18 @@ func (p *Parser) ParseFunctionDecl() Statement {
 * functionBody : '{' functionCall* '}' ;
  */
 func (p *Parser) ParseFunctionBody() *FunctionBody {
-	t := p.tokenizer.Next()
+	t := p.lexer.Next()
 	stmts := []Statement{}
 
 	if "{" == t.Text {
-		for p.tokenizer.Peek().Kind == Identifier {
+		for p.lexer.Peek().Kind == Identifier {
 			funcCall := p.ParseFunctionCall()
 			if nil != funcCall && IsFunctionCallNode(funcCall) {
 				stmts = append(stmts, funcCall)
 			}
 		}
 
-		t = p.tokenizer.Next()
+		t = p.lexer.Next()
 		if t.Text == "}" {
 			return NewFunctionBody(stmts)
 		} else {
@@ -114,12 +154,12 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
  */
 func (p *Parser) ParseFunctionCall() Statement {
 	var parameters []string
-	t := p.tokenizer.Next()
+	t := p.lexer.Next()
 
 	if t.Kind == Identifier {
-		t1 := p.tokenizer.Next()
+		t1 := p.lexer.Next()
 		if t1.Text == "(" {
-			t2 := p.tokenizer.Next()
+			t2 := p.lexer.Next()
 			for t2.Text != ")" {
 				if t2.Kind == StringLiteral {
 					parameters = append(parameters, t2.Text)
@@ -127,17 +167,17 @@ func (p *Parser) ParseFunctionCall() Statement {
 					log.Println("Expecting parameter in FunctionCall, while we got a ", t2.Text)
 					return nil
 				}
-				t2 = p.tokenizer.Next()
+				t2 = p.lexer.Next()
 				if t2.Text != ")" {
 					if t2.Text == "," {
-						t2 = p.tokenizer.Next() //消化掉,
+						t2 = p.lexer.Next() //消化掉,
 					} else {
 						log.Println("Expecting a comma , in FunctionCall, while we got a " + t2.Text)
 						return nil
 					}
 				}
 			}
-			t2 = p.tokenizer.Next() //消化掉 ;
+			t2 = p.lexer.Next() //消化掉 ;
 			if t2.Text == ";" {
 				return NewFunctionCall(t.Text, parameters)
 			} else {
@@ -150,54 +190,98 @@ func (p *Parser) ParseFunctionCall() Statement {
 	return nil
 }
 
-type OperatorPrecedenceParser struct {
-	tokenizer *Tokenizer
-	OpStack   *Stack
-	AstStack  *Stack
+/**
+ * 解析变量声明
+ * 语法规则：
+ * variableDecl : 'let' Identifier typeAnnotation？ ('=' singleExpression)? ';';
+* typeAnnotation : ':' typeName;
+*/
+func (this *Parser) ParseVariableDecl() Statement {
+	this.lexer.Next() //skip let token
+	t := this.lexer.Next()
+	if t.Kind == Identifier {
+		name := t.Text
+		typ := ""
+		var init Expression = nil
+
+		t = this.lexer.Next()
+		if t.Text == ":" {
+			t = this.lexer.Next()
+			if t.Kind == Identifier {
+				typ = t.Text
+			} else {
+				log.Fatalln("kind should be indentifier")
+			}
+		}
+
+		//初始化部分
+		if t.Text == "=" {
+			init = this.ParseExpression()
+		}
+
+		t = this.lexer.Peek()
+		if t.Text == ";" {
+			return NewVariableDecl(name, typ, init)
+		} else {
+			log.Fatalln("kind should be ; ")
+		}
+	}
+
+	return nil
 }
 
-func NewOperatorPrecedenceParser(tokenizer *Tokenizer) *OperatorPrecedenceParser {
-	return &OperatorPrecedenceParser{tokenizer: tokenizer, OpStack: NewStack(), AstStack: NewStack()}
+func (this *Parser) ParseExpression() Expression {
+	return this.ParseBinaryExpr()
 }
 
-func (this *OperatorPrecedenceParser) Parse() ASTNode {
+// b =  a + 1 * 3;,这里只处理后面的表达式，也就是 a+1*3的部分
+func (this *Parser) ParseBinaryExpr() Expression {
+	OpStack := NewStack()
+	AstStack := NewStack()
+
 	for {
-		t := this.tokenizer.Next()
-		if t.Kind == IntegerLiteral {
+		t := this.lexer.Next()
+		//todo 现在只能处理int类型 和变量
+		if t.Kind == IntegerLiteral || t.Kind == Identifier {
 			node := NewNode()
 			node.SetToken(t)
 			node.SetKind(NodeKindScalar)
 			node.SetLabel(t.Text)
 
-			this.AstStack.Push(node)
+			AstStack.Push(node)
+		} else if t.Text == "(" { //todo 现在还无法处理 a*(2+3)的情况，
+			expr := this.ParseExpression()
+			AstStack.Push(expr)
+			this.lexer.Next() //skip ")"符号
 		} else {
-			if this.OpStack.Peek() == nil {
+			//如果操作符栈为空的话，直接生成AST节点，并压入操作符栈
+			if OpStack.Peek() == nil {
 				node := NewNode()
 				node.SetToken(t)
 				node.SetKind(NodeKindOperator)
 				node.SetLabel(t.Text)
-				this.OpStack.Push(node)
-			} else if this.OpStack.Peek().(ASTNode).Token().Precedence() < t.Precedence() {
+				OpStack.Push(node)
+			} else if OpStack.Peek().(ASTNode).Token().Precedence() < t.Precedence() {
 				node := NewNode()
 				node.SetToken(t)
 				node.SetKind(NodeKindOperator)
 				node.SetLabel(t.Text)
-				this.OpStack.Push(node)
+				OpStack.Push(node)
 			} else {
 				for {
-					parent := this.OpStack.Pop()
-					r := this.AstStack.Pop().(ASTNode)
-					l := this.AstStack.Pop().(ASTNode)
+					parent := OpStack.Pop()
+					r := AstStack.Pop().(ASTNode)
+					l := AstStack.Pop().(ASTNode)
 					parent.(ASTNode).AddChild(l)
 					parent.(ASTNode).AddChild(r)
-					this.AstStack.Push(parent)
-					if this.OpStack.Peek() == nil ||
-						this.OpStack.Peek().(ASTNode).Token().Precedence() < t.Precedence() {
+					AstStack.Push(parent)
+					if OpStack.Peek() == nil ||
+						OpStack.Peek().(ASTNode).Token().Precedence() < t.Precedence() {
 						node := NewNode()
 						node.SetToken(t)
 						node.SetKind(NodeKindOperator)
 						node.SetLabel(t.Text)
-						this.OpStack.Push(node)
+						OpStack.Push(node)
 						break
 					}
 				}
@@ -205,7 +289,26 @@ func (this *OperatorPrecedenceParser) Parse() ASTNode {
 		}
 
 		if t.Kind == Seperator && t.Text == ";" {
-			return this.AstStack.Peek().(ASTNode)
+			return AstStack.Peek().(ASTNode)
 		}
 	}
+
+	log.Fatalln("should be here")
+	return nil
+}
+
+func (this *Parser) ParseExpressionStmt() Statement {
+	expr := this.ParseExpression()
+	if nil != expr {
+		t := this.lexer.Peek()
+		if t.Text == ";" {
+			return NewExpressionStmt(expr)
+		} else {
+			log.Fatalln("should be ; but got:", t.Text)
+		}
+	} else {
+		log.Fatalln("expect expression, bug got nil")
+	}
+
+	return nil
 }

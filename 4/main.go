@@ -21,10 +21,10 @@ func main() {
 
 func compileAndRun() {
 	//词法分析
-	tokenizer := NewTokenizer(NewCharStream(source))
+	lexer := NewLexer(NewCharStream(source))
 
 	//语法分析，构建AST
-	parser := NewParser(tokenizer)
+	parser := NewParser(lexer)
 	prog := parser.ParseProg()
 	//prog.String("  ")
 	log.Println(prog)

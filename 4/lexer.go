@@ -43,15 +43,16 @@ const (
 type NodeKind int
 
 const (
-	NodeKindProg         NodeKind = 1
-	NodeKineBinaryExpr            = 6
-	NodeKindStatement             = 2
-	NodeKindScalar                = 7
-	NodeKindOperator              = 9
-	NodeKindVariable              = 8
-	NodeKindFunctionDecl          = 3
-	NodeKindFunctionCall          = 4
-	NodeKindFunctionBody          = 5
+	NodeKindProg          NodeKind = 1
+	NodeKineBinaryExpr             = 6
+	NodeKindStatement              = 2
+	NodeKindExprStatement          = 10
+	NodeKindScalar                 = 7
+	NodeKindOperator               = 9
+	NodeKindVariable               = 8
+	NodeKindFunctionDecl           = 3
+	NodeKindFunctionCall           = 4
+	NodeKindFunctionBody           = 5
 )
 
 var OperatorPrecedenceMap = map[string]int{
@@ -160,16 +161,16 @@ func (this *CharStream) isEOF() bool {
  * next(): 返回当前的Token，并移向下一个Token。
  * peek(): 返回当前的Token，但不移动当前位置。
  */
-type Tokenizer struct {
+type Lexer struct {
 	Stream    *CharStream
 	NextToken *Token
 }
 
-func NewTokenizer(stream *CharStream) *Tokenizer {
-	return &Tokenizer{Stream: stream, NextToken: &Token{Kind: EOF, Text: ""}}
+func NewLexer(stream *CharStream) *Lexer {
+	return &Lexer{Stream: stream, NextToken: &Token{Kind: EOF, Text: ""}}
 }
 
-func (t *Tokenizer) Next() *Token {
+func (t *Lexer) Next() *Token {
 	if t.NextToken.Kind == EOF && !t.Stream.isEOF() {
 		t.NextToken = t.getAToken()
 	}
@@ -180,14 +181,14 @@ func (t *Tokenizer) Next() *Token {
 	return lastToken
 }
 
-func (t *Tokenizer) Peek() *Token {
+func (t *Lexer) Peek() *Token {
 	if t.NextToken.Kind == EOF && !t.Stream.isEOF() {
 		t.NextToken = t.getAToken()
 	}
 	return t.NextToken
 }
 
-func (t *Tokenizer) getAToken() *Token {
+func (t *Lexer) getAToken() *Token {
 	t.skipSpaces()
 	if t.Stream.isEOF() {
 		return NewToken(EOF, "")
@@ -260,7 +261,7 @@ func (t *Tokenizer) getAToken() *Token {
  * 字符串字面量。
  * 目前只支持双引号，并且不支持转义。
  */
-func (t *Tokenizer) parseStringLiteral() *Token {
+func (t *Lexer) parseStringLiteral() *Token {
 	token := NewToken(StringLiteral, "")
 	t.Stream.next() //去掉"
 
@@ -276,7 +277,7 @@ func (t *Tokenizer) parseStringLiteral() *Token {
 	log.Fatal("should not be here")
 	return nil
 }
-func (t *Tokenizer) parseDigit() *Token {
+func (t *Lexer) parseDigit() *Token {
 	token := NewToken(IntegerLiteral, "")
 	for t.isDigit(t.Stream.peek()) {
 		token.Text += t.Stream.next()
@@ -288,7 +289,7 @@ func (t *Tokenizer) parseDigit() *Token {
 /**
  * 解析标识符。从标识符中还要挑出关键字。
  */
-func (t *Tokenizer) parseIdentifier() *Token {
+func (t *Lexer) parseIdentifier() *Token {
 	token := NewToken(Identifier, "")
 	//第一个字符不用判断，因为在调用者那里已经判断过了
 	token.Text += t.Stream.next()
@@ -303,7 +304,7 @@ func (t *Tokenizer) parseIdentifier() *Token {
 
 	return token
 }
-func (t *Tokenizer) skipSignalComment() {
+func (t *Lexer) skipSignalComment() {
 	//跳过第二个/，第一个之前已经跳过去了。
 	t.Stream.next()
 	for !t.Stream.isEOF() {
@@ -312,7 +313,7 @@ func (t *Tokenizer) skipSignalComment() {
 		}
 	}
 }
-func (t *Tokenizer) skipMultiComments() {
+func (t *Lexer) skipMultiComments() {
 	//跳过*，之前的/已经跳过去了。
 	t.Stream.next()
 
@@ -329,33 +330,33 @@ func (t *Tokenizer) skipMultiComments() {
 	log.Fatalf("multicoments in invalid. not found */, line:%d,column:%d", t.Stream.Line, t.Stream.Col)
 }
 
-func (t *Tokenizer) skipSpaces() {
+func (t *Lexer) skipSpaces() {
 	for t.isSpace(t.Stream.peek()) {
 		t.Stream.next()
 	}
 }
-func (t *Tokenizer) isSpace(str string) bool {
+func (t *Lexer) isSpace(str string) bool {
 	if str == " " || str == "\n" || str == "\t" {
 		return true
 	}
 	return false
 }
 
-func (t *Tokenizer) isDigit(str string) bool {
+func (t *Lexer) isDigit(str string) bool {
 	if len(str) > 0 {
 		return str[0] >= '0' && str[0] <= '9'
 	}
 	return false
 }
 
-func (t *Tokenizer) isLetter(str string) bool {
+func (t *Lexer) isLetter(str string) bool {
 	if len(str) > 0 {
 		c := str[0]
 		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
 	}
 	return false
 }
-func (t *Tokenizer) isLetterDigitOrUnderScore(str string) bool {
+func (t *Lexer) isLetterDigitOrUnderScore(str string) bool {
 	if len(str) > 0 {
 		c := str[0]
 		return c >= 'a' && c <= 'z' ||

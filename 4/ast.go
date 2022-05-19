@@ -82,6 +82,23 @@ type Statement interface {
 	ASTNode
 }
 
+type Expression interface {
+	ASTNode
+}
+
+/**
+ * 表达式语句
+ * 就是在表达式后面加个分号
+ */
+type ExpressionStmt struct {
+	ASTNode
+}
+
+func NewExpressionStmt(expr Expression) *ExpressionStmt {
+	expr.SetKind(NodeKindExprStatement)
+	return &ExpressionStmt{ASTNode: expr}
+}
+
 type FunctionCall struct {
 	*node
 	Name       string
@@ -109,7 +126,9 @@ type VariableDecl struct {
 }
 
 func NewVariableDecl(name string, typ string, initExpr ASTNode) *VariableDecl {
-	return &VariableDecl{node: NewNode(), name: name, typ: typ, initExpr: initExpr}
+	node := NewNode()
+	node.SetKind(NodeKindVariable)
+	return &VariableDecl{node: node, name: name, typ: typ, initExpr: initExpr}
 }
 
 type Variable struct {

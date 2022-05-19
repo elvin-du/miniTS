@@ -11,7 +11,7 @@ china`
 
 func TestTokenizer_skipMultiComments(t *testing.T) {
 	stream := NewCharStream(strMultiComments)
-	tokener := NewTokenizer(stream)
+	tokener := NewLexer(stream)
 	tokener.skipMultiComments()
 	if tokener.Stream.peek() != "\n" {
 		t.Error("should be c, but got", tokener.Stream.peek())
@@ -20,7 +20,7 @@ func TestTokenizer_skipMultiComments(t *testing.T) {
 
 func TestTokenizer_skipSignalComment(t *testing.T) {
 	stream := NewCharStream(strSignalComment)
-	tokener := NewTokenizer(stream)
+	tokener := NewLexer(stream)
 	tokener.skipSignalComment()
 	if tokener.Stream.peek() != "c" {
 		t.Error("should be c, but got", tokener.Stream.peek())
@@ -54,9 +54,9 @@ func TestCharStream_next(t *testing.T) {
 }
 
 //func TestTokenizer_Next(t *testing.T) {
-//	tokenizer := NewTokenizer(NewCharStream(source))
-//	token := tokenizer.Peek()
+//	lexer := NewLexer(NewCharStream(source))
+//	token := lexer.Peek()
 //	for token.Kind != EOF {
-//		token = tokenizer.Next()
+//		token = lexer.Next()
 //	}
 //}
