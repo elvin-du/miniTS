@@ -121,7 +121,7 @@ func (p *Parser) ParseFunctionDecl() Statement {
 * 语法规则：
 * functionBody : '{' functionCall* '}' ;
  */
-func (p *Parser) ParseFunctionBody() *FunctionBody {
+func (p *Parser) ParseFunctionBody() *Block {
 	t := p.lexer.Next()
 	stmts := []Statement{}
 
@@ -135,7 +135,7 @@ func (p *Parser) ParseFunctionBody() *FunctionBody {
 
 		t = p.lexer.Next()
 		if t.Text == "}" {
-			return NewFunctionBody(stmts)
+			return NewBlock(stmts)
 		} else {
 			log.Fatal("expect },but got ", t.Text)
 		}

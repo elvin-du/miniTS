@@ -19,6 +19,8 @@ type ASTNode interface {
 	AddChild(ASTNode)
 	SetToken(*Token)
 	SetLabel(string)
+
+	Visit() interface{}
 }
 
 type node struct {
@@ -39,6 +41,10 @@ func (n *node) Dump(indent int) {
 	for _, child := range n.children {
 		child.Dump(indent + 2)
 	}
+}
+
+func (this *node) Visit() interface{} {
+	return nil
 }
 
 func (n *node) Kind() NodeKind {
@@ -140,16 +146,19 @@ type Variable struct {
 func NewVariable(name string) *Variable {
 	return &Variable{node: NewNode(), name: name}
 }
+func (this *Variable) Visit() interface{} {
+	return nil
+}
 
 //*********FunctionDecl************/
 type FunctionDecl struct {
 	*node
 	Name       string
 	Parameters []string
-	Body       *FunctionBody
+	Body       *Block
 }
 
-func NewFunctionDecl(name string, params []string, body *FunctionBody) *FunctionDecl {
+func NewFunctionDecl(name string, params []string, body *Block) *FunctionDecl {
 	return &FunctionDecl{Name: name, Parameters: params, Body: body}
 }
 
@@ -161,23 +170,32 @@ func (this *FunctionDecl) Kind() NodeKind {
 	return NodeKindFunctionDecl
 }
 
-type FunctionBody struct {
+type Block struct {
 	*node
 	Stmts []Statement
 }
 
-func NewFunctionBody(stmts []Statement) *FunctionBody {
-	return &FunctionBody{node: NewNode(), Stmts: stmts}
+func NewBlock(stmts []Statement) *Block {
+	return &Block{node: NewNode(), Stmts: stmts}
 }
 
-func (this *FunctionBody) String() {
+func (this *Block) String() {
 	for _, stmt := range this.Stmts {
 		log.Println(stmt)
 	}
 }
 
-func (this *FunctionBody) Kind() NodeKind {
-	return NodeKindFunctionBody
+func (this *Block) Kind() NodeKind {
+	return NodeKindBlock
+}
+
+func (this *Block) Visit() interface{} {
+	var ret interface{}
+	for _, s := range this.Stmts {
+		ret = s.Visit()
+	}
+
+	return ret
 }
 
 //func NewExpr(kind NodeKind, token *Token) *Expr {
@@ -206,3 +224,18 @@ func (this *Prog) String() {
 func (this *Prog) Kind() NodeKind {
 	return NodeKindProg
 }
+
+type ASTVisitor struct {
+}
+
+func NewASTVisitor() *ASTVisitor {
+	return &ASTVisitor{}
+}
+
+func (this *ASTVisitor) Visit(node ASTNode) interface{} {
+	return node.Visit()
+}
+
+//func (this *ASTVisitor) VisitProg(prog *Prog) interface{} {
+//
+//}

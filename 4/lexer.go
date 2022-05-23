@@ -52,7 +52,7 @@ const (
 	NodeKindVariable               = 8
 	NodeKindFunctionDecl           = 3
 	NodeKindFunctionCall           = 4
-	NodeKindFunctionBody           = 5
+	NodeKindBlock                  = 5
 )
 
 var OperatorPrecedenceMap = map[string]int{

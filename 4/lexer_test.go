@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"log"
+	"testing"
+)
 
 var strSignalComment = `//hello,world
 china`
@@ -60,3 +63,68 @@ func TestCharStream_next(t *testing.T) {
 //		token = lexer.Next()
 //	}
 //}
+
+type binnode struct {
+	left  *binnode
+	right *binnode
+	value int
+}
+
+func newNode(v int) *binnode {
+	return &binnode{value: v}
+}
+
+func inOrderRecursion(root *binnode) {
+	p := root
+	stack := NewStack()
+	for p != nil || stack.size != 0 {
+		for p != nil {
+			stack.Push(p)
+			p = p.left
+		}
+
+		if stack.size != 0 {
+			data := stack.Pop().(*binnode)
+			log.Println(data.value)
+			p = data.right
+		}
+	}
+}
+
+func preOrderRecursion(root *binnode) {
+	p := root
+	stack := NewStack()
+	for p != nil || stack.size != 0 {
+		for p != nil {
+			log.Println(p.value)
+			stack.Push(p)
+			p = p.left
+		}
+
+		if stack.size != 0 {
+			data := stack.Pop().(*binnode)
+			p = data.right
+		}
+	}
+}
+
+func TestCharStream_next33(t *testing.T) {
+	root := newNode(2)
+	l1 := newNode(1)
+	r1 := newNode(4)
+	root.left = l1
+	root.right = r1
+
+	l1_l := newNode(7)
+	l1_r := newNode(8)
+
+	l1.left = l1_l
+	l1.right = l1_r
+
+	r1_l := newNode(5)
+	r1_r := newNode(6)
+	r1.left = r1_l
+	r1.right = r1_r
+
+	preOrderRecursion(root)
+}

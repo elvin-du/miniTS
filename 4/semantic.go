@@ -25,7 +25,7 @@ func (this *RefResolver) VisitFunctionDecl(funcDecl *FunctionDecl) {
 	this.VisitFunctionBody(funcDecl.Body)
 }
 
-func (this *RefResolver) VisitFunctionBody(body *FunctionBody) {
+func (this *RefResolver) VisitFunctionBody(body *Block) {
 	for _, stmt := range body.Stmts {
 		this.resolveFunctionCall(this.prog, stmt.(*FunctionCall))
 	}

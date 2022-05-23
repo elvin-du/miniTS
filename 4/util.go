@@ -29,7 +29,7 @@ func IsFunctionDeclNode(node ASTNode) bool {
 
 func IsFunctionBodyNode(node ASTNode) bool {
 	k := node.Kind()
-	if k == NodeKindFunctionBody {
+	if k == NodeKindBlock {
 		return true
 	}
 	return false

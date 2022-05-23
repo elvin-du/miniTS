@@ -28,7 +28,7 @@ func (this *Intepreter) RunFunction(fCall *FunctionCall) {
 	}
 }
 
-func (this *Intepreter) VisitFunctionBody(fBody *FunctionBody) {
+func (this *Intepreter) VisitFunctionBody(fBody *Block) {
 	for _, stmt := range fBody.Stmts {
 		this.RunFunction(stmt.(*FunctionCall))
 	}
